@@ -25,6 +25,10 @@ The CMS exposes a GraphQL endpoint, with rich filtering that you can use to quer
 
 Property editors for each property on the entity model are added to the schema in code, allowing you to choose between some of the in-built editors (TextBox, Select, Image) or to write your own using React.
 
+## Getting started
+```
+npx @refract-cms/create-app --dir my-app
+```
 ## Docs
 
 View the docs: <https://refract-cms.com/docs>
