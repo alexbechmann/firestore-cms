@@ -12,6 +12,7 @@ exports.createPages = ({ boundActionCreators, graphql }) => {
           node {
             excerpt
             id
+            fileAbsolutePath
             html
             frontmatter {
               path
@@ -31,7 +32,9 @@ exports.createPages = ({ boundActionCreators, graphql }) => {
         createPage({
           path: node.frontmatter.path,
           component: docTemplate,
-          context: {}
+          context: {
+            // section
+          }
         });
       });
   });

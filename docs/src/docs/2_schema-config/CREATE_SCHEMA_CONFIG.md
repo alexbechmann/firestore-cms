@@ -1,6 +1,7 @@
 ---
 path: "/create-schema-config"
 title: Create schema config
+section: Schema config
 order: 2
 ---
 

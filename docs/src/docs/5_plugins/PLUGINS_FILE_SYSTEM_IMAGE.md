@@ -1,6 +1,7 @@
 ---
 path: "/plugin-file-system-image"
 title: File System Image Plugin
+section: Plugins
 order: 6
 ---
 
@@ -41,4 +42,24 @@ export default configureCliServer({
     })
   ]
 });
+```
+
+In your schema you then add a reference to `FileSystemImageSchema`
+
+```tsx
+{
+  image: propertyBuilder.singleReference(FileSystemImageSchema, {
+    displayName: "Image"
+  });
+}
+```
+
+or
+
+```tsx
+{
+  image: propertyBuilder.multipleReference(FileSystemImageSchema, {
+    displayName: "Image"
+  });
+}
 ```

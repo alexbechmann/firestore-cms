@@ -1,6 +1,7 @@
 ---
 path: "/cli"
 title: Use the Refract-CMS CLI
+section: Quick start
 order: 1
 ---
 

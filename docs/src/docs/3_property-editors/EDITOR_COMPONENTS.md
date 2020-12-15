@@ -1,15 +1,16 @@
 ---
 path: "/built-in-editor-components"
 title: Built in editor components
+section: Property Editors
 order: 3
 ---
 
-@refract-cms/core comes with built-in editor components (react based) for the basic input types:
+@refract-cms/core comes with built-in editor components for the basic input types:
 
 ## Text editor
 
 ```typescript
-import { RefractTypes, createTextEditor } from '@refract-cms/core';
+import { createTextEditor } from '@refract-cms/core';
 
 properties: {
   ...
@@ -27,7 +28,7 @@ properties: {
 ## Date picker editor
 
 ```typescript
-import { RefractTypes, createDatePickerEditor } from '@refract-cms/core';
+import { createDatePickerEditor } from '@refract-cms/core';
 
 properties: {
   ...

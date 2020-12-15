@@ -18,6 +18,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.4.4",
     "chalk": "^2.4.2",
+    "commander": "^5.0.0",
     "fs-extra": "^7.0.1",
     "inquirer": "^6.3.1",
     "ora": "^3.4.0",

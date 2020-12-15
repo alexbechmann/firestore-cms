@@ -1,6 +1,7 @@
 ---
 path: "/plugin-code-gen"
 title: Codegen Plugin
+section: Plugins
 order: 7
 ---
 

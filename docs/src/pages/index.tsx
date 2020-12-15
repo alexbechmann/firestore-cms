@@ -11,7 +11,13 @@ import {
   ListItemText,
   List,
   Avatar,
-  ListItemAvatar
+  ListItemAvatar,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  CardHeader,
+  makeStyles
 } from '@material-ui/core';
 import Img from 'gatsby-image';
 
@@ -28,114 +34,80 @@ interface IndexPageProps {
   };
 }
 
-export default class extends React.Component<IndexPageProps, {}> {
-  constructor(props: IndexPageProps, context: any) {
-    super(props, context);
+const useStyles = makeStyles(theme => ({
+  cardContent: {
+    minHeight: theme.spacing(14)
   }
-  public render() {
-    return (
-      <Layout title=" Welcome to the Refract Cms docs">
-        <Typography variant="h5" gutterBottom>
-          What is Refract-CMS?
-        </Typography>
-        <Typography paragraph>
-          Refract-CMS is an open source, code first, self-hosted headless CMS using React, Express & MongoDB.
-        </Typography>
-        <Typography variant="h5" gutterBottom>
-          How is it different from other CMS's?
-        </Typography>
-        <Typography paragraph>
-          Unlike most other CMS systems, the schema is defined in JavaScript/TypeScript, and we do not force developers
-          to use elaborate GUI's. Developers can live entirely in their chosen code editor, while content editors can
-          utilize a blazing fast React based single-page-app, to manage content. This approach has some advantages: - It
-          allows teams to properly code-review schema changes using their current git workflows. - Your schema's can be
-          copy/pasted between projects, or distributed using your organizations private NPM registry etc. - Your schema
-          can be deployed to multiple environments without requiring you to do duplicate work in a GUI or database
-          imports, You just deploy the code and start editing. - Clean database, Refract-CMS only creates one mongo
-          collection per schema, as it doesn't have to store schema information in there.
-        </Typography>
-        <Typography variant="h5" gutterBottom>
-          GraphQL
-        </Typography>
-        <Typography paragraph>
-          The CMS exposes a GraphQL endpoint, with rich filtering that you can use to query data for your frontend apps.
-        </Typography>
-        <Typography variant="h5" gutterBottom>
-          Customization
-        </Typography>
-        <Typography paragraph>
-          Property editors for each property on the entity model are added to the schema in code, allowing you to choose
-          between some of the in-built editors (TextBox, Select, Image) or to write your own using React.
-        </Typography>
-        <Typography variant="h5" gutterBottom>
-          Technologies
-        </Typography>
-        <List style={{ width: '100%' }}>
-          <ListItem>
-            <ListItemAvatar>
-              <Avatar
-                component={(props: any) => <Img {...props} fixed={this.props.data.mongodbImg.childImageSharp.fixed} />}
-              >
-                M
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText primary="MongoDB" secondary="This is used to persist the CMS data" />
-          </ListItem>
-          <ListItem>
-            <ListItemAvatar>
-              <Avatar
-                component={(props: any) => <Img {...props} fixed={this.props.data.nodejsImg.childImageSharp.fixed} />}
-              >
-                N
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText primary="NodeJS" secondary="The runtime for the server code" />
-          </ListItem>
-          <ListItem>
-            <ListItemAvatar>
-              <Avatar
-                component={(props: any) => <Img {...props} fixed={this.props.data.tsImg.childImageSharp.fixed} />}
-              >
-                TS
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary="TypeScript"
-              secondary="This library works with TypeScript & JavaScript. TypeScript is recommended to allow it to verify your schema"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemAvatar>
-              <Avatar
-                component={(props: any) => <Img {...props} fixed={this.props.data.reactImg.childImageSharp.fixed} />}
-              >
-                R
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary="React"
-              secondary="The dashboard is written in React, and custom editor components are provided as React components"
-            />
-          </ListItem>
-          <ListItem>
-            <ListItemAvatar>
-              <Avatar>EX</Avatar>
-            </ListItemAvatar>
-            <ListItemText
-              primary="Express"
-              secondary="Required to add the Refract Cms router which handles the GraphQL requests & authorization etc"
-            />
-          </ListItem>
-        </List>
-        <br />
-        <Button variant="raised" component="a" color="secondary" onClick={() => navigate('/cli')}>
-          Get started with CLI
-        </Button>
-      </Layout>
-    );
-  }
-}
+}));
 
+export default function(props: IndexPageProps) {
+  const classes = useStyles();
+  return (
+    <Layout title="Welcome to the Refract Cms docs">
+      <Typography variant="h5" gutterBottom>
+        What is Refract-CMS?
+      </Typography>
+      <Typography paragraph>
+        Refract-CMS is an open source, code first, self-hosted headless CMS that uses React, Express & MongoDB.
+      </Typography>
+      <br />
+      <br />
+
+      <Typography variant="h5" gutterBottom>
+        Features
+      </Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6}>
+          <Card elevation={20}>
+            <CardHeader title="Code first" />
+            <CardContent className={classes.cardContent}>
+              <Typography>
+                Schema configuration such as fields & editor components are configured in code only. This means
+                developers can version control & embrace good DevOps practices.
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Card elevation={20}>
+            <CardHeader title="Customizable" />
+            <CardContent className={classes.cardContent}>
+              <Typography>
+                Creating a custom editor is as simple as creating a react component & importing it into the schema
+                declaration. You can also add server-side custom resolvers for user-defined custom fields.
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Card elevation={20}>
+            <CardHeader title="Type safety" />
+            <CardContent className={classes.cardContent}>
+              <Typography>
+                All configuration is type-safe using TypeScript, allowing you to be confident when making changes to the
+                schema.
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Card elevation={20}>
+            <CardHeader title="GraphQL" />
+            <CardContent className={classes.cardContent}>
+              <Typography>
+                A GraphQL endpoint with rich filtering & sorting is generated for your consuming apps, allowing you to
+                extract all CMS data as well as add custom resolvers.
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+      {/* <Button variant="raised" component="a" color="secondary" onClick={() => navigate('/cli')}>
+          Get started with CLI
+        </Button> */}
+    </Layout>
+  );
+}
 export const pageQuery = graphql`
   query IndexQuery {
     site {

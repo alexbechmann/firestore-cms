@@ -25,7 +25,7 @@ pre[class*='language-'] {
   -ms-hyphens: none;
   hyphens: none;
 
-  border-radius: 25px;
+  border-radius: 5px;
 }
 
 /* Code blocks */
@@ -42,7 +42,9 @@ pre[class*='language-'] {
 
 /* Inline code */
 :not(pre) > code[class*='language-'] {
-  padding: 0.1em;
+  /* padding: 0.1em; */
+  padding: 2px 3px;
+
   border-radius: 0.3em;
   white-space: normal;
 }
@@ -188,4 +190,8 @@ pre[class*='language-'] {
   ~ .token.punctuation
   + .token.punctuation {
   color: #3f9cd6;
+}
+
+.language-text {
+  color: white !important;
 }

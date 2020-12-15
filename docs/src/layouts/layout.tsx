@@ -12,16 +12,18 @@ import {
   withStyles,
   WithStyles,
   createMuiTheme,
-  MuiThemeProvider,
   IconButton,
-  Button
+  Button,
+  Container
 } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/styles';
 import 'typeface-roboto';
 import GitHub from '../icons/GitHub';
 import { indigo } from '@material-ui/core/colors';
 const favicon = require('../assets/favicon.ico');
 import withRoot from '../with-root';
 import { compose } from 'recompose';
+import { theme } from '../theme';
 
 interface LayoutProps {
   title: string;
@@ -30,79 +32,70 @@ interface LayoutProps {
 const styles = (theme: Theme) =>
   createStyles({
     '@global h1, h2, h3, p': {
-      color: 'white',
+      // color: 'white',
       fontFamily: 'Roboto'
     },
-    '@global a': {
-      color: theme.palette.secondary.main
-    },
+    // '@global a': {
+    //   color: theme.palette.primary.main
+    // },
     content: {
-      padding: theme.spacing.unit
+      padding: theme.spacing()
     },
     grow: {
       flexGrow: 1
     },
     appBar: {
-      marginBottom: theme.spacing.unit * 3
+      marginBottom: theme.spacing(3),
+      background: 'white'
     },
     title: {
-      marginBottom: theme.spacing.unit * 3
+      marginBottom: theme.spacing(3)
+    },
+    logo: {
+      marginRight: theme.spacing(),
+      height: 30
     }
   });
 
 interface Props extends LayoutProps, WithStyles<typeof styles> {}
 
-const theme = createMuiTheme({
-  palette: {
-    type: 'dark',
-    primary: {
-      main: indigo[600]
-    }
-    // secondary: {
-    //   main: '#4ec9b0'
-    // }
-  }
-});
-
 const Layout: React.ComponentType<Props> = ({ title, children, classes }) => (
-  <MuiThemeProvider theme={theme}>
-    <AppBar position="sticky" className={classes.appBar}>
-      <Toolbar>
-        <Typography color="inherit" variant="h6">
-          <Link to="/" style={{ color: 'white' }}>
-            Refract Cms docs
-          </Link>
-        </Typography>
-        <div className={classes.grow} />
-        <Button component="a" onClick={() => navigate('/screenshots')}>
-          Screenshots
-        </Button>
-        <Button component="a" onClick={() => navigate('/docs')}>
-          Docs
-        </Button>
-        <IconButton href="https://github.com/alexbechmann/refract-cms">
-          <GitHub />
-        </IconButton>
-      </Toolbar>
+  <ThemeProvider theme={theme}>
+    <AppBar position="sticky" className={classes.appBar} elevation={1}>
+      <Container maxWidth="md">
+        <Toolbar disableGutters>
+          <img className={classes.logo} src="/avumt-3eeeh-003.png" />
+          <Typography color="primary" variant="h6">
+            <Link to="/" style={{ textDecoration: 'none' }}>
+              Refract Cms
+            </Link>
+          </Typography>
+          <div className={classes.grow} />
+          <Button component="a" onClick={() => navigate('/screenshots')}>
+            Screenshots
+          </Button>
+          <Button component="a" onClick={() => navigate('/cli')}>
+            Docs
+          </Button>
+          <IconButton href="https://github.com/alexbechmann/refract-cms">
+            <GitHub />
+          </IconButton>
+        </Toolbar>
+      </Container>
     </AppBar>
     <Helmet
       title={title}
-      meta={[{ name: 'description', content: 'Sample' }, { name: 'keywords', content: 'sample, something' }]}
+      meta={[
+        { name: 'description', content: 'Sample' },
+        { name: 'keywords', content: 'sample, something' }
+      ]}
       link={[{ rel: 'icon', href: `${favicon}` }]}
-    />
+    >
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    </Helmet>
     <CssBaseline />
-    <Grid container justify="center">
-      <Grid item xs={12} sm={1} md={10} lg={10} xl={7} className={classes.content}>
-        <Typography gutterBottom variant="h4" className={classes.title}>
-          {title}
-        </Typography>
-        {children}
-      </Grid>
-    </Grid>
-  </MuiThemeProvider>
+    <Container maxWidth="md">{children}</Container>
+  </ThemeProvider>
 );
 
-export default compose(
-  withRoot,
-  withStyles(styles)
-)(Layout) as React.ComponentType<LayoutProps>;
+export default compose(withRoot, withStyles(styles))(Layout) as React.ComponentType<LayoutProps>;

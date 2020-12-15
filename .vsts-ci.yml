@@ -1,7 +1,3 @@
-queue:
-  name: Hosted VS2017
-  demands: npm
-
 trigger:
   - master
   - release
@@ -9,133 +5,227 @@ trigger:
 
 variables:
   tag: latest
+  env: $(Build.SourceBranchName)
 
-steps:
-  - task: gittools.gitversion.gitversion-task.GitVersion@3
+stages:
+  - stage: Build 
+    jobs:
+      - job: Pulumi
+        pool:
+          name: Default
+          demands:
+            - HOME_NETWORK
+        
+        steps:
+          - script: docker login --username alexbechmann --password $(DOCKER_TOKEN)
+            displayName: Docker login
 
-  - powershell: echo "##vso[task.setvariable variable=tag]$(GitVersion.PreReleaseLabel)"
-    displayName: "Set pre release tag"
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
+          - script: |
+              SLUG=$(echo "$(system.pullRequest.sourceBranch)" | iconv -t ascii//TRANSLIT | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-)
+              echo "env is $SLUG"
+              echo "##vso[task.setvariable variable=env]$SLUG"
+            condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
 
-  - powershell: echo "tag is $(tag)"
-    displayName: "echo tag"
+          - script: echo "$(system.pullRequest.sourceBranch)"
+            condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
 
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
-    displayName: Yarn install
-    inputs:
-      Arguments: "install"
-      
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
-    displayName: Yarn run build
-    inputs:
-      Arguments: "run build"
+          - script: pulumi stack init $(env)
+            workingDirectory: pulumi
+            continueOnError: true
 
-  - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
-    displayName: Yarn test
-    inputs:
-      Arguments: "test"
+          - script: pulumi config set digitalocean:token $(DIGITAL_OCEAN_TOKEN) --secret --stack $(env)
+            displayName: Set DO token
+            workingDirectory: pulumi
+            continueOnError: true
 
-  - script: node ./set-package-versions -p $(GitVersion.SemVer)
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: $(System.DefaultWorkingDirectory)/pulumi
+              Contents: |
+                package*.json
+                index.ts
+                Pulumi*
+                tsconfig.json
+              TargetFolder: $(Build.ArtifactStagingDirectory)/Pulumi
 
-  # - powershell: . 'packages/core/update-package-version.ps1' $(GitVersion.SemVer)
-  #   displayName: Update package version
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)/Pulumi
+              ArtifactName: Pulumi
 
-  # - powershell: . 'packages/dashboard/update-package-version.ps1' $(GitVersion.SemVer)
-  #   displayName: Update package version
+          - script: npm --prefix $(System.DefaultWorkingDirectory)/pulumi install
+            displayName: "Pulumi web npm install"
 
-  # - powershell: . 'packages/server/update-package-version.ps1' $(GitVersion.SemVer)
-  #   displayName: Update package version
+          - script: pulumi preview --stack $(env) --cwd $(System.DefaultWorkingDirectory)/pulumi
+            displayName: "Preview Pulumi"
 
-  # - powershell: . 'packages/cli/update-package-version.ps1' $(GitVersion.SemVer)
-  #   displayName: Update package version
+          - script: |
+              pulumi up --stack $(env) --yes --cwd $(System.DefaultWorkingDirectory)/pulumi
+            displayName: "Deploy with Pulumi"
+            
+      - job: Packages
+        pool:
+          vmImage: windows-latest
+        steps:
+          - task: gittools.gitversion.gitversion-task.GitVersion@3
 
-  # - powershell: . 'packages/create-app/update-package-version.ps1' $(GitVersion.SemVer)
-  #   displayName: Update package version
+          - powershell: echo "##vso[task.setvariable variable=tag]$(GitVersion.PreReleaseLabel)"
+            displayName: "Set pre release tag"
+            condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/core
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          - powershell: echo "tag is $(tag)"
+            displayName: "echo tag"
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/dashboard
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
+            displayName: Yarn install
+            inputs:
+              Arguments: "install"
+              
+          - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
+            displayName: Yarn run build
+            inputs:
+              Arguments: "run build"
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/server
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          - task: geeklearningio.gl-vsts-tasks-yarn.yarn-task.Yarn@2
+            displayName: Yarn test
+            inputs:
+              Arguments: "test"
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/cli
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          - script: node ./set-package-versions -p $(GitVersion.SemVer)
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/create-app
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          # - powershell: . 'packages/core/update-package-version.ps1' $(GitVersion.SemVer)
+          #   displayName: Update package version
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/plugin-active-directory-auth
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          # - powershell: . 'packages/dashboard/update-package-version.ps1' $(GitVersion.SemVer)
+          #   displayName: Update package version
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/plugin-code-gen
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          # - powershell: . 'packages/server/update-package-version.ps1' $(GitVersion.SemVer)
+          #   displayName: Update package version
 
-  - task: Npm@1
-    displayName: npm custom
-    condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
-    inputs:
-      command: custom
-      workingDir: packages/plugin-file-system-image
-      verbose: false
-      customCommand: "publish --access public --tag $(tag)"
-      customEndpoint: npm
-      publishEndpoint: npm
+          # - powershell: . 'packages/cli/update-package-version.ps1' $(GitVersion.SemVer)
+          #   displayName: Update package version
+
+          # - powershell: . 'packages/create-app/update-package-version.ps1' $(GitVersion.SemVer)
+          #   displayName: Update package version
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/core
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/dashboard
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/server
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/cli
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/create-app
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/plugin-active-directory-auth
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/plugin-code-gen
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+          - task: Npm@1
+            displayName: npm custom
+            condition: and(succeeded(), eq(variables['DEPLOY'], 'true'))
+            inputs:
+              command: custom
+              workingDir: packages/plugin-file-system-image
+              verbose: false
+              customCommand: "publish --access public --tag $(tag)"
+              customEndpoint: npm
+              publishEndpoint: npm
+
+  - stage:
+    displayName: Cleanup
+    # pool:
+    #   vmImage: ubuntu-latest
+    pool:
+      name: Default
+      demands:
+        - HOME_NETWORK
+    jobs:
+      - deployment: Preview
+        displayName: Preview
+        environment: prcleanup
+        condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    artifactName: Pulumi
+
+                - bash: |
+                    SLUG=$(echo "$(system.pullRequest.sourceBranch)" | iconv -t ascii//TRANSLIT | sed -r s/[~\^]+//g | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-)
+                    echo "env is $SLUG"
+                    echo "##vso[task.setvariable variable=env]$SLUG"
+                  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))
+                - script: npm --prefix $(Pipeline.Workspace)/Pulumi install
+                  displayName: "Pulumi web npm install"
+
+                - script: |
+                    npm install 
+                    pulumi destroy --stack $(env) --yes --cwd $(Pipeline.Workspace)/Pulumi
+                  displayName: "Destroy with Pulumi"

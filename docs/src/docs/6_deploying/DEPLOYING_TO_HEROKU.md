@@ -1,6 +1,7 @@
 ---
 path: "/deployment"
 title: Deploying to Heroku
+section: Deploying
 order: 5
 ---
 
